@@ -5,6 +5,9 @@ import dash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
+import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import ThemeSwitchAIO
+
 
 # Read the airline data into the pandas dataframe
 airline_data = pd.read_csv('https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DV0101EN-SkillsNetwork/Data%20Files/airline_data.csv',
@@ -12,25 +15,31 @@ airline_data = pd.read_csv('https://cf-courses-data.s3.us.cloud-object-storage.a
                            dtype={'Div1Airport': str, 'Div1TailNum': str,
                                   'Div2Airport': str, 'Div2TailNum': str})
 # Create a dash application
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.COSMO])
 
-app.layout = html.Div(children=[html.H1('Airline Performance Dashboard', style={'textAlign': 'center', 'color': '#503D36', 'font-size': 40}),
-                                html.Div(["Input Year: ", dcc.Input(id='input-year', value='2010',
-                                                                    type='number', style={'height': '50px', 'font-size': 35}),],
-                                         style={'font-size': 40}),
-                                html.Br(),
-                                html.Br(),
-                                html.Div(dcc.Graph(id='line-plot')),
-                                ])
+theme_switch = ThemeSwitchAIO(
+    aio_id="theme", themes=[dbc.themes.COSMO, dbc.themes.CYBORG]
+)
+
+app.layout = dbc.Container([theme_switch, html.Div(children=[html.H1('Airline Performance Dashboard', style={'textAlign': 'center', 'color': '#503D36', 'font-size': 40}),
+                                                             html.Div(["Input Year: ", dcc.Input(id='input-year', value='2010',
+                                                                                                 type='number', style={'height': '50px', 'font-size': 35}),],
+                                                                      style={'font-size': 40}),
+                                                             html.Br(),
+                                                             html.Br(),
+                                                             html.Div(
+                                                                 dcc.Graph(id='line-plot')),
+                                                             ])], className="m-4 dbc")
 
 # add callback decorator
 
 
 @app.callback(Output(component_id='line-plot', component_property='figure'),
-              Input(component_id='input-year', component_property='value'))
+              [Input(component_id='input-year', component_property='value'), Input(ThemeSwitchAIO.ids.switch("theme"), "value")])
 # Add computation to callback function and return graph
-def get_graph(entered_year):
+def get_graph(entered_year, toggle):
     # Select 2019 data
+    template = "cosmo" if toggle else "cyborg"
     df = airline_data[airline_data['Year'] == int(entered_year)]
 
     # Group the data by Month and compute average over arrival delay time.
